@@ -7,6 +7,7 @@ import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,12 +20,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-        public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
+        public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+@PostMapping("/login")
+        public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 }
