@@ -1,37 +1,45 @@
 package com.attendance.attendance_api.service;
 
-import com.attendance.attendance_api.dto.LoginRequest;
 import com.attendance.attendance_api.dto.RegisterRequest;
+import com.attendance.attendance_api.dto.LoginRequest;
 import com.attendance.attendance_api.model.Role;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.attendance.attendance_api.security.JwtUtil;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
 
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-    public User register(RegisterRequest req) {
-        User user = new User();
-        user.setName(req.getName());
-        user.setEmail(req.getEmail());
-        user.setPassword(encoder.encode(req.getPassword())); // never store plain password
-        user.setRole(Role.valueOf(req.getRole().toUpperCase()));
-        return userRepository.save(user);
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                        AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
     }
 
-    public User login(LoginRequest req) {
-        User user = userRepository.findByEmail(req.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!encoder.matches(req.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-        return user;
+    public User register(RegisterRequest request) {
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
+        return userRepository.save(user); // save() hands back the saved row, including the generated id
+    }
+
+    public String login(LoginRequest request) {
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+        return jwtUtil.generateToken(request.getEmail());
     }
 }
