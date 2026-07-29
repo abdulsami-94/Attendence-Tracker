@@ -1,6 +1,7 @@
 package com.attendance.attendance_api.service;
 
 import com.attendance.attendance_api.dto.RegisterRequest;
+import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.dto.LoginRequest;
 import com.attendance.attendance_api.model.Role;
 import com.attendance.attendance_api.model.User;
@@ -10,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.attendance.attendance_api.dto.UserResponse;
 
 @Service
 public class AuthService {
@@ -27,13 +29,14 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public User register(RegisterRequest request) {
+    public UserResponse register(RegisterRequest request) {
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.valueOf(request.getRole().toUpperCase()));
-        return userRepository.save(user); // save() hands back the saved row, including the generated id
+        User saved = userRepository.save(user);
+        return new UserResponse(saved.getId(), saved.getName(), saved.getEmail(), saved.getRole());
     }
 
     public String login(LoginRequest request) {

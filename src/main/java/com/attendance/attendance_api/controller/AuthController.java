@@ -1,8 +1,9 @@
 package com.attendance.attendance_api.controller;
 
 import com.attendance.attendance_api.dto.RegisterRequest;
+import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.dto.LoginRequest;
-import com.attendance.attendance_api.model.User;
+import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegisterRequest request) {
+        public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
