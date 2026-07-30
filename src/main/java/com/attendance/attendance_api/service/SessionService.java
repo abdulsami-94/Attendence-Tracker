@@ -20,6 +20,7 @@ public class SessionService {
 
     private final SessionRepository sessionRepository;
     private static final int DEFAULT_DURATION_MINUTES = 10;
+    private static final int DEFAULT_RADIUS_METERS = 100;
 
     public SessionResponse startSession(User teacher, StartSessionRequest request) {
         sessionRepository.findByTeacherAndActiveTrue(teacher).ifPresent(s -> {
@@ -28,6 +29,7 @@ public class SessionService {
         });
 
         int duration = request.getDurationMinutes() != null ? request.getDurationMinutes() : DEFAULT_DURATION_MINUTES;
+        int radius = request.getRadiusMeters() != null ? request.getRadiusMeters() : DEFAULT_RADIUS_METERS;
 
         Session session = new Session();
         session.setSubject(request.getSubject());
@@ -36,6 +38,9 @@ public class SessionService {
         session.setExpiryTime(LocalDateTime.now().plusMinutes(duration));
         session.setCurrentToken(UUID.randomUUID().toString());
         session.setActive(true);
+        session.setLatitude(request.getLatitude());
+        session.setLongitude(request.getLongitude());
+        session.setRadiusMeters(radius);
         session.setTeacher(teacher);
 
         return toResponse(sessionRepository.save(session));
@@ -66,7 +71,9 @@ public class SessionService {
     }
 
     private SessionResponse toResponse(Session s) {
-        return new SessionResponse(s.getId(), s.getSubject(), s.getRoomNumber(),
-                s.getStartTime(), s.getExpiryTime(), s.getCurrentToken(), s.isActive());
+        return new SessionResponse(
+                s.getId(), s.getSubject(), s.getRoomNumber(),
+                s.getStartTime(), s.getExpiryTime(), s.getCurrentToken(), s.isActive(),
+                s.getLatitude(), s.getLongitude(), s.getRadiusMeters());
     }
 }

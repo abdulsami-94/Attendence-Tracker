@@ -1,44 +1,51 @@
 package com.attendance.attendance_api.service;
 
 import com.attendance.attendance_api.dto.AttendanceRequest;
+import com.attendance.attendance_api.dto.AttendanceResponse;
 import com.attendance.attendance_api.model.AttendanceRecord;
 import com.attendance.attendance_api.model.Session;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.repository.AttendanceRecordRepository;
 import com.attendance.attendance_api.repository.SessionRepository;
-import com.attendance.attendance_api.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class AttendanceService {
 
-    @Autowired private AttendanceRecordRepository attendanceRepository;
-    @Autowired private SessionRepository sessionRepository;
-    @Autowired private UserRepository userRepository;
+    private final AttendanceRecordRepository attendanceRepository;
+    private final SessionRepository sessionRepository;
 
-    public AttendanceRecord markAttendance(AttendanceRequest req) {
-        Session session = sessionRepository.findById(req.getSessionId())
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+    private static final double EARTH_RADIUS_METERS = 6_371_000;
+
+    public AttendanceResponse markAttendance(User student, AttendanceRequest req) {
+        Session session = sessionRepository.findByCurrentToken(req.getToken())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid session token"));
 
         if (!session.isActive()) {
-            throw new RuntimeException("Session is not active");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session is not active");
         }
         if (LocalDateTime.now().isAfter(session.getExpiryTime())) {
-            throw new RuntimeException("Session expired");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session expired");
         }
-        if (!session.getCurrentToken().equals(req.getToken())) {
-            throw new RuntimeException("Invalid token");
-        }
-        if (attendanceRepository.existsByStudentIdAndSessionId(req.getStudentId(), req.getSessionId())) {
-            throw new RuntimeException("Already marked");
+        if (attendanceRepository.existsByStudentIdAndSessionId(student.getId(), session.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Attendance already marked for this session");
         }
 
-        User student = userRepository.findById(req.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+        double distance = distanceMeters(
+                session.getLatitude(), session.getLongitude(),
+                req.getLatitude(), req.getLongitude());
+        if (distance > session.getRadiusMeters()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Outside geofence (" + Math.round(distance) + "m from session, limit "
+                            + session.getRadiusMeters() + "m)");
+        }
 
         AttendanceRecord record = new AttendanceRecord();
         record.setStudent(student);
@@ -48,10 +55,46 @@ public class AttendanceService {
         record.setLongitude(req.getLongitude());
         record.setDeviceId(req.getDeviceId());
 
-        return attendanceRepository.save(record);
+        return toResponse(attendanceRepository.save(record));
     }
 
-    public List<AttendanceRecord> getRecordsForSession(Long sessionId) {
-        return attendanceRepository.findBySessionId(sessionId);
+    public List<AttendanceResponse> getMyAttendance(User student) {
+        return attendanceRepository.findByStudentOrderByTimestampDesc(student).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<AttendanceResponse> getRecordsForSession(Long sessionId, User teacher) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+
+        if (!session.getTeacher().getId().equals(teacher.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your session");
+        }
+
+        return attendanceRepository.findBySessionId(sessionId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private AttendanceResponse toResponse(AttendanceRecord r) {
+        return new AttendanceResponse(
+                r.getId(),
+                r.getSession().getId(),
+                r.getSession().getSubject(),
+                r.getTimestamp(),
+                r.getLatitude(),
+                r.getLongitude(),
+                r.getDeviceId());
+    }
+
+    /** Haversine distance between two WGS84 points, in meters. */
+    static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 }

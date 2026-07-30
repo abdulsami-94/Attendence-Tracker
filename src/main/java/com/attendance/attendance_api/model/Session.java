@@ -15,6 +15,9 @@ public class Session {
     private LocalDateTime expiryTime;
     private String currentToken;
     private boolean active;
+    private Double latitude;
+    private Double longitude;
+    private Integer radiusMeters;
     @ManyToOne
     private User teacher;
 }

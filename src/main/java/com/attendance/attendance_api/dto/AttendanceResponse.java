@@ -7,15 +7,12 @@ import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
-public class SessionResponse {
+public class AttendanceResponse {
     private Long id;
+    private Long sessionId;
     private String subject;
-    private String roomNumber;
-    private LocalDateTime startTime;
-    private LocalDateTime expiryTime;
-    private String currentToken;
-    private boolean active;
+    private LocalDateTime timestamp;
     private Double latitude;
     private Double longitude;
-    private Integer radiusMeters;
+    private String deviceId;
 }

@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findByActiveTrue();
     Optional<Session> findByTeacherAndActiveTrue(User teacher);
+    Optional<Session> findByCurrentToken(String currentToken);
     List<Session> findByTeacherOrderByStartTimeDesc(User teacher);
 }
