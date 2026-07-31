@@ -5,9 +5,17 @@
  * This file serves as the centralized HTTP client for the application, powered by Axios.
  * It provides pre-configured requests, timeout handling, error logging, and hooks for request/response interception.
  * 
- * How to change the Base URL:
- * Update the `baseURL` property in the `axios.create()` configuration below.
- * In a production setup, this should read from environment variables (e.g., process.env.EXPO_PUBLIC_API_URL).
+ * Why Expo uses the `EXPO_PUBLIC_` prefix:
+ * Expo React Native environment variables MUST be prefixed with `EXPO_PUBLIC_` for the bundler (Metro) to
+ * expose them to the client-side JavaScript code. Any variable without this prefix is omitted from the frontend
+ * bundle for security, preventing secret exposure.
+ * 
+ * How to change the API URL:
+ * 1. Android Emulator: Use http://10.0.2.2:8080/api (10.0.2.2 is a special alias mapping to the host machine's localhost).
+ * 2. iOS Simulator: Use http://localhost:8080/api (shares the host network interface).
+ * 3. Physical Device: Use http://<your-computer-local-ip>:8080/api (e.g. http://192.168.1.5:8080/api), ensuring both
+ *    your computer and physical device are on the exact same Wi-Fi network.
+ * 4. Production Server: Use the actual hosted server URL (e.g., https://api.yourdomain.com/api).
  * 
  * Where authentication will be integrated:
  * Look at the request interceptor block (`apiClient.interceptors.request.use`).
@@ -16,9 +24,19 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
+// Load baseURL from environment variable, with a safe fallback to Android emulator interface if not set
+const apiBaseURL = process.env.EXPO_PUBLIC_API_URL;
+
+if (!apiBaseURL) {
+  console.warn(
+    '[API Warning]: EXPO_PUBLIC_API_URL environment variable is not defined. ' +
+    'Falling back to default Android Emulator API URL (http://10.0.2.2:8080/api).'
+  );
+}
+
 // Create a single Axios instance with default settings
 const apiClient: AxiosInstance = axios.create({
-  baseURL: 'baseURL: process.env.EXPO_PUBLIC_API_URL,',
+  baseURL: apiBaseURL || 'http://10.0.2.2:8080/api',
   timeout: 10000, // 10000ms request timeout
   headers: {
     'Content-Type': 'application/json',
