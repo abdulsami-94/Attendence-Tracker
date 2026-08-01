@@ -23,6 +23,7 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Load baseURL from environment variable, with a safe fallback to Android emulator interface if not set
 const apiBaseURL = process.env.EXPO_PUBLIC_API_URL;
@@ -46,13 +47,15 @@ const apiClient: AxiosInstance = axios.create({
 
 // Request Interceptor
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // AUTHENTICATION INTEGRATION PLACEHOLDER:
-    // 1. Retrieve the JWT or session token (e.g., await AsyncStorage.getItem('token')).
-    // 2. If the token exists, attach it to the request headers:
-    //    if (token && config.headers) {
-    //      config.headers.Authorization = `Bearer ${token}`;
-    //    }
+  async (config: InternalAxiosRequestConfig) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Error fetching token for API request:', error);
+    }
     return config;
   },
   (error) => {

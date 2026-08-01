@@ -12,18 +12,20 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSizes, fontWeights, styles as themeStyles } from '../theme';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LoginScreen() {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ email: '', password: '', general: '' });
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     let valid = true;
-    const newErrors = { email: '', password: '' };
+    const newErrors = { email: '', password: '', general: '' };
 
     // Email validation
     if (!email.trim()) {
@@ -41,21 +43,22 @@ export default function LoginScreen() {
     if (!password) {
       newErrors.password = 'Password is required';
       valid = false;
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-      valid = false;
     }
 
     setErrors(newErrors);
 
     if (valid) {
       setLoading(true);
-      console.log('Login pressed');
-      
-      // Simulate loading state for presentation (removed on backend hookup)
-      setTimeout(() => {
+      try {
+        await signIn({ email: email.trim(), password });
+      } catch (error: any) {
+        setErrors((prev) => ({
+          ...prev,
+          general: error?.response?.data?.message || 'Invalid email or password',
+        }));
+      } finally {
         setLoading(false);
-      }, 2000);
+      }
     }
   };
 
@@ -82,6 +85,12 @@ export default function LoginScreen() {
 
         {/* Form Container */}
         <View style={styles.form}>
+          {errors.general ? (
+            <Text style={[styles.errorText, { textAlign: 'center', marginBottom: spacing.md }]}>
+              {errors.general}
+            </Text>
+          ) : null}
+
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email Address</Text>
