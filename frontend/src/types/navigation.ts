@@ -5,7 +5,7 @@ export type AuthStackParamList = {
 };
 
 export type MainStackParamList = {
-  Home: undefined;
+  Dashboard: undefined;
 };
 
 export type RootStackParamList = {
