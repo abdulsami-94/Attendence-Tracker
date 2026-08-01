@@ -5,9 +5,9 @@ import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 
 export default function AppNavigator() {
-  const { token, loading } = useAuth();
+  const { token, isInitializing } = useAuth();
 
-  if (loading) {
+  if (isInitializing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />

@@ -24,6 +24,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../constants/storage';
 
 // Load baseURL from environment variable, with a safe fallback to Android emulator interface if not set
 const apiBaseURL = process.env.EXPO_PUBLIC_API_URL;
@@ -45,11 +46,17 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Interceptor logout handler
+let logoutHandler: (() => void) | null = null;
+export const setLogoutHandler = (handler: () => void) => {
+  logoutHandler = handler;
+};
+
 // Request Interceptor
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -74,6 +81,10 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message;
     console.error(`[API Error] Status: ${status || 'Network Error'} | Message: ${message}`);
+    
+    if (status === 401 && logoutHandler) {
+      logoutHandler();
+    }
     
     // Reject the error to propagate it to the calling service
     return Promise.reject(error);
