@@ -70,7 +70,7 @@ export default function DashboardScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.nameText}>{user?.firstName || data?.student?.fullName || 'Student'}</Text>
+          <Text style={styles.nameText}>{user?.name || data?.student?.fullName || 'Student'}</Text>
         </View>
         <Text style={styles.dateText}>{getCurrentDate()}</Text>
       </View>
@@ -99,7 +99,7 @@ export default function DashboardScreen() {
                 title="Profile" 
                 icon="person-outline" 
                 color={colors.secondary}
-                onPress={() => console.log('Profile')} 
+                onPress={() => navigation.navigate('Profile')} 
               />
               <QuickActionButton 
                 title="Logout" 

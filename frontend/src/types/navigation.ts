@@ -7,6 +7,7 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   Dashboard: undefined;
   Attendance: undefined;
+  Profile: undefined;
 };
 
 export type RootStackParamList = {
