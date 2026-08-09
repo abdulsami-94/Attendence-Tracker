@@ -1,15 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { dashboardService } from '../services/dashboard.service';
 import { DashboardData } from '../types/dashboard';
+import { MainStackParamList } from '../types/navigation';
 import { StudentCard } from '../components/StudentCard';
 import { SummaryCard } from '../components/SummaryCard';
 import { QuickActionButton } from '../components/QuickActionButton';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
+type DashboardNavProp = NativeStackNavigationProp<MainStackParamList, 'Dashboard'>;
+
 export default function DashboardScreen() {
+  const navigation = useNavigation<DashboardNavProp>();
   const { user, signOut } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +87,7 @@ export default function DashboardScreen() {
               <QuickActionButton 
                 title="Attendance" 
                 icon="calendar-outline" 
-                onPress={() => console.log('View Attendance')} 
+                onPress={() => navigation.navigate('Attendance')} 
               />
               <QuickActionButton 
                 title="Timetable" 
