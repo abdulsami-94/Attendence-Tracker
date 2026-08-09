@@ -1,70 +1,25 @@
+// components/AttendanceCard.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
-import { spacing } from '../theme/spacing';
+import { AttendanceSummary } from '../types/attendance';
 
-interface Props {
-  subjectName: string;
-  present: number;
-  total: number;
-}
-
-export const AttendanceCard: React.FC<Props> = ({ subjectName, present, total }) => {
-  const percentage = total > 0 ? (present / total) * 100 : 0;
-  
-  const getPercentageColor = (percent: number) => {
-    if (percent > 75) return colors.success;
-    if (percent >= 60) return colors.warning;
-    return colors.error;
-  };
-
-  const percentageColor = getPercentageColor(percentage);
+export default function AttendanceCard({ summary }: { summary: AttendanceSummary }) {
+  const isLow = summary.percentage < 75;
 
   return (
     <View style={styles.card}>
-      <Text style={styles.subjectText}>{subjectName}</Text>
-      <View style={styles.statsContainer}>
-        <Text style={styles.ratioText}>{present} / {total}</Text>
-        <Text style={[styles.percentageText, { color: percentageColor }]}>
-          {percentage.toFixed(1)}%
-        </Text>
-      </View>
+      <Text style={styles.subject}>{summary.subjectName}</Text>
+      <Text style={styles.count}>{summary.present}/{summary.total} classes attended</Text>
+      <Text style={[styles.percentage, { color: isLow ? '#d32f2f' : '#2e7d32' }]}>
+        {summary.percentage.toFixed(1)}%
+      </Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  subjectText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  ratioText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  percentageText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2 },
+  subject: { fontSize: 16, fontWeight: '600' },
+  count: { fontSize: 13, color: '#666', marginTop: 4 },
+  percentage: { fontSize: 20, fontWeight: '700', marginTop: 8 },
 });
