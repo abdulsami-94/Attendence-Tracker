@@ -3,6 +3,7 @@ package com.attendance.attendance_api.service;
 import com.attendance.attendance_api.dto.RegisterRequest;
 import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.dto.LoginRequest;
+import com.attendance.attendance_api.dto.LoginResponse;
 import com.attendance.attendance_api.model.Role;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.repository.UserRepository;
@@ -11,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.attendance.attendance_api.dto.LoginResponse;
 import com.attendance.attendance_api.dto.UserResponse;
 
 @Service
@@ -39,10 +41,17 @@ public class AuthService {
         return new UserResponse(saved.getId(), saved.getName(), saved.getEmail(), saved.getRole());
     }
 
-    public String login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
-        return jwtUtil.generateToken(request.getEmail());
+
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = jwtUtil.generateToken(request.getEmail());
+        UserResponse userResponse = new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
+
+        return new LoginResponse(token, userResponse); 
     }
 }

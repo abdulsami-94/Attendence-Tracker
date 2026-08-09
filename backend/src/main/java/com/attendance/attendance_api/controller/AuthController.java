@@ -3,6 +3,7 @@ package com.attendance.attendance_api.controller;
 import com.attendance.attendance_api.dto.RegisterRequest;
 import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.dto.LoginRequest;
+import com.attendance.attendance_api.dto.LoginResponse;
 import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.service.AuthService;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +25,8 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(request));
     }
 
-@PostMapping("/login")
-        public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request) {
+    @PostMapping("/login")
+        public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 }
