@@ -2,31 +2,25 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { Avatar } from '../components/Avatar';
+import { LoadingState } from '../components/LoadingState';
+import { ErrorState } from '../components/ErrorState';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
-  const { user, isInitializing, signOut } = useAuth();
+  const { user, isInitializing, signOut, loading } = useAuth();
 
   if (isInitializing) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingState message="Loading profile..." />;
   }
 
   if (!user) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Unable to load user profile.</Text>
-      </View>
-    );
+    return <ErrorState message="Unable to load user profile." />;
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <Avatar name={user.name} size={100} />
         <Text style={styles.headerName}>{user.name}</Text>
@@ -63,9 +57,18 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={signOut} activeOpacity={0.8}>
-        <Ionicons name="log-out-outline" size={24} color={colors.error} />
-        <Text style={styles.logoutText}>Logout</Text>
+      <TouchableOpacity
+        style={[styles.logoutButton, loading && styles.logoutButtonDisabled]}
+        onPress={signOut}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.error} />
+        ) : (
+          <Ionicons name="log-out-outline" size={24} color={colors.error} />
+        )}
+        <Text style={styles.logoutText}>{loading ? 'Logging out...' : 'Logout'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -75,17 +78,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollContent: {
     padding: spacing.md,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: 16,
+    flexGrow: 1,
   },
   header: {
     alignItems: 'center',
@@ -147,6 +143,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 12,
     marginBottom: spacing.xl,
+  },
+  logoutButtonDisabled: {
+    opacity: 0.7,
   },
   logoutText: {
     color: colors.error,

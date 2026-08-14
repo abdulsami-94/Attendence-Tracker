@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -9,13 +9,19 @@ interface Props {
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   color?: string;
+  disabled?: boolean;
+  loading?: boolean;
 }
 
-export const QuickActionButton: React.FC<Props> = ({ title, icon, onPress, color = colors.primary }) => {
+export const QuickActionButton: React.FC<Props> = ({ title, icon, onPress, color = colors.primary, disabled = false, loading = false }) => {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.container, disabled && styles.disabled]} onPress={onPress} disabled={disabled} activeOpacity={0.7}>
       <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
-        <Ionicons name={icon} size={28} color={color} />
+        {loading ? (
+          <ActivityIndicator size="small" color={color} />
+        ) : (
+          <Ionicons name={icon} size={28} color={color} />
+        )}
       </View>
       <Text style={styles.title}>{title}</Text>
     </TouchableOpacity>
@@ -35,6 +41,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xs,
+  },
+  disabled: {
+    opacity: 0.6,
   },
   title: {
     fontSize: 12,

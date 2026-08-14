@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSizes, fontWeights, styles as themeStyles } from '../theme';
 import { useAuth } from '../hooks/useAuth';
+import { getErrorMessage } from '../utils/errorUtils';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -24,6 +25,10 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState({ email: '', password: '', general: '' });
 
   const handleLogin = async () => {
+    if (loading) {
+      return;
+    }
+
     let valid = true;
     const newErrors = { email: '', password: '', general: '' };
 
@@ -51,10 +56,13 @@ export default function LoginScreen() {
       setLoading(true);
       try {
         await signIn({ email: email.trim(), password });
-      } catch (error: any) {
+      } catch (error) {
         setErrors((prev) => ({
           ...prev,
-          general: error?.response?.data?.message || 'Invalid email or password',
+          general: getErrorMessage(error, {
+            auth: 'Invalid email or password.',
+            fallback: 'Could not sign in. Please try again.',
+          }),
         }));
       } finally {
         setLoading(false);
@@ -111,6 +119,7 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="next"
+              editable={!loading}
             />
             {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
           </View>
@@ -139,10 +148,12 @@ export default function LoginScreen() {
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
+                editable={!loading}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
+                disabled={loading}
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -160,6 +171,7 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.checkboxRow}
               onPress={() => setRememberMe(!rememberMe)}
+              disabled={loading}
               activeOpacity={0.8}
             >
               <View

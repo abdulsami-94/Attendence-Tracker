@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
@@ -9,6 +9,10 @@ import { MainStackParamList } from '../types/navigation';
 import { StudentCard } from '../components/StudentCard';
 import { SummaryCard } from '../components/SummaryCard';
 import { QuickActionButton } from '../components/QuickActionButton';
+import { LoadingState } from '../components/LoadingState';
+import { EmptyState } from '../components/EmptyState';
+import { ErrorState } from '../components/ErrorState';
+import { getErrorMessage } from '../utils/errorUtils';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -16,32 +20,51 @@ type DashboardNavProp = NativeStackNavigationProp<MainStackParamList, 'Dashboard
 
 export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavProp>();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
+    if (requestInFlight.current) {
+      return;
+    }
+
+    requestInFlight.current = true;
+
     try {
+      setError(null);
       const response = await dashboardService.getDashboardData();
       setData(response);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load dashboard data');
-      console.error('Dashboard fetch error:', error);
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      setError(getErrorMessage(err));
+    } finally {
+      requestInFlight.current = false;
     }
-  };
+  }, []);
 
   const loadData = useCallback(async () => {
+    if (requestInFlight.current) {
+      return;
+    }
+
     setLoading(true);
     await fetchDashboardData();
     setLoading(false);
-  }, []);
+  }, [fetchDashboardData]);
 
   const onRefresh = useCallback(async () => {
+    if (loading || refreshing || requestInFlight.current) {
+      return;
+    }
+
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
-  }, []);
+  }, [fetchDashboardData, loading, refreshing]);
 
   useEffect(() => {
     loadData();
@@ -53,16 +76,17 @@ export default function DashboardScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingState message="Loading dashboard..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={loadData} />;
   }
 
   return (
     <ScrollView 
       style={styles.container}
+      contentContainerStyle={styles.scrollContent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
       }
@@ -102,17 +126,19 @@ export default function DashboardScreen() {
                 onPress={() => navigation.navigate('Profile')} 
               />
               <QuickActionButton 
-                title="Logout" 
+                title={authLoading ? 'Logging out' : 'Logout'}
                 icon="log-out-outline" 
                 color={colors.error}
-                onPress={signOut} 
+                onPress={signOut}
+                disabled={authLoading}
+                loading={authLoading}
               />
             </View>
           </View>
         </>
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No data available</Text>
+          <EmptyState message="No dashboard data available" icon="stats-chart-outline" />
         </View>
       )}
     </ScrollView>
@@ -123,13 +149,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: spacing.md,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
+  scrollContent: {
+    padding: spacing.md,
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
@@ -169,11 +192,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   emptyContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
   },
 });

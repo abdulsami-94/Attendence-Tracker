@@ -1,21 +1,22 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { attendanceService } from '../services/attendanceService';
 import { dashboardService } from '../services/dashboard.service';
 import { AttendanceRecord } from '../types/attendance';
 import { AttendanceSummary } from '../types/dashboard';
 import AttendanceCard from '../components/AttendanceCard';
 import { SummaryCard } from '../components/SummaryCard';
+import { LoadingState } from '../components/LoadingState';
+import { EmptyState } from '../components/EmptyState';
+import { ErrorState } from '../components/ErrorState';
+import { getErrorMessage } from '../utils/errorUtils';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -25,8 +26,15 @@ export default function AttendanceScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
 
   const fetchData = useCallback(async () => {
+    if (requestInFlight.current) {
+      return;
+    }
+
+    requestInFlight.current = true;
+
     try {
       setError(null);
       const [attendanceRecords, dashboardData] = await Promise.all([
@@ -37,7 +45,9 @@ export default function AttendanceScreen() {
       setSummary(dashboardData.attendanceSummary);
     } catch (err) {
       console.error('Attendance fetch error:', err);
-      setError('Failed to load attendance data. Please try again.');
+      setError(getErrorMessage(err));
+    } finally {
+      requestInFlight.current = false;
     }
   }, []);
 
@@ -47,6 +57,10 @@ export default function AttendanceScreen() {
       let isActive = true;
 
       const load = async () => {
+        if (requestInFlight.current) {
+          return;
+        }
+
         setLoading(true);
         await fetchData();
         if (isActive) {
@@ -63,39 +77,34 @@ export default function AttendanceScreen() {
   );
 
   const onRefresh = useCallback(async () => {
+    if (loading || refreshing || requestInFlight.current) {
+      return;
+    }
+
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
-  }, [fetchData]);
+  }, [fetchData, loading, refreshing]);
 
   const handleRetry = useCallback(async () => {
+    if (loading || requestInFlight.current) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     await fetchData();
     setLoading(false);
-  }, [fetchData]);
+  }, [fetchData, loading]);
 
   // ── Loading State ──
   if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingState message="Loading attendance records..." />;
   }
 
   // ── Error State ──
   if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Ionicons name="cloud-offline-outline" size={48} color={colors.textSecondary} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={handleRetry} activeOpacity={0.7}>
-          <Ionicons name="refresh" size={18} color={colors.white} />
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState message={error} onRetry={handleRetry} />;
   }
 
   // ── List Header (Summary) ──
@@ -107,21 +116,13 @@ export default function AttendanceScreen() {
     </View>
   );
 
-  // ── Empty State ──
-  const EmptyList = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="calendar-outline" size={48} color={colors.disabled} />
-      <Text style={styles.emptyText}>No attendance records yet.</Text>
-    </View>
-  );
-
   return (
     <FlatList
       data={records}
       keyExtractor={(item) => item.id.toString()}
       renderItem={({ item }) => <AttendanceCard record={item} />}
       ListHeaderComponent={ListHeader}
-      ListEmptyComponent={EmptyList}
+      ListEmptyComponent={<EmptyState message="No attendance records yet." icon="calendar-outline" />}
       contentContainerStyle={styles.listContent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
@@ -139,13 +140,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.md,
     paddingBottom: spacing.xxl,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.xl,
+    flexGrow: 1,
   },
   sectionTitle: {
     fontSize: 18,
@@ -153,36 +148,5 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-  },
-  errorText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-    lineHeight: 22,
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 8,
-    gap: spacing.xs,
-  },
-  retryButtonText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: '600',
   },
 });
