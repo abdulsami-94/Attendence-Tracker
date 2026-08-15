@@ -8,6 +8,11 @@ export type MainStackParamList = {
   Dashboard: undefined;
   Attendance: undefined;
   Profile: undefined;
+
+  TeacherDashboard: undefined;
+  StartSession: undefined;
+  TeacherSessions: undefined;
+  SessionAttendance: { sessionId: number };
 };
 
 export type RootStackParamList = {
