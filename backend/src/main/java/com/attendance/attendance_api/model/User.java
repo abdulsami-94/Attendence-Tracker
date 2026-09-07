@@ -1,5 +1,6 @@
 package com.attendance.attendance_api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,18 +14,25 @@ import java.util.List;
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
 public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
+    @Column(nullable = false)
     private String name;
+
+    @Setter
     @Column(unique = true, nullable = false)
     private String email;
+
+    @Setter
+    @JsonIgnore
     private String password;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     private Role role;
 

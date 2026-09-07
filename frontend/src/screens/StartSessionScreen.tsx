@@ -9,13 +9,17 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { sessionService } from '../services/session.service';
 import { getErrorMessage } from '../utils/errorUtils';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { MainStackParamList } from '../types/navigation';
+
+type StartSessionNavProp = NativeStackNavigationProp<MainStackParamList>;
 
 export default function StartSessionScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StartSessionNavProp>();
   const [subject, setSubject] = useState('');
   const [subjectError, setSubjectError] = useState('');
   const [generalError, setGeneralError] = useState('');

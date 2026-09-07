@@ -40,8 +40,15 @@ public class SessionController {
     }
 
     @GetMapping("/current")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public ResponseEntity<SessionResponse> current(Authentication authentication) {
-        return ResponseEntity.ok(sessionService.getCurrentSession(getCurrentTeacher(authentication)));
+        boolean isStudent = authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
+
+        if (isStudent) {
+            return ResponseEntity.ok(sessionService.getCurrentActiveSessionForStudent());
+        }
+    return ResponseEntity.ok(sessionService.getCurrentSession(getCurrentTeacher(authentication)));
     }
 
     private User getCurrentTeacher(Authentication authentication) {

@@ -8,12 +8,13 @@ import com.attendance.attendance_api.model.Role;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.repository.UserRepository;
 import com.attendance.attendance_api.security.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.attendance.attendance_api.dto.LoginResponse;
-import com.attendance.attendance_api.dto.UserResponse;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
@@ -31,6 +32,7 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
+    @Transactional
     public UserResponse register(RegisterRequest request) {
         User user = new User();
         user.setName(request.getName());
@@ -47,7 +49,7 @@ public class AuthService {
         );
 
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         String token = jwtUtil.generateToken(request.getEmail());
         UserResponse userResponse = new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());

@@ -13,6 +13,7 @@ export type MainStackParamList = {
   StartSession: undefined;
   TeacherSessions: undefined;
   SessionAttendance: { sessionId: number };
+  MarkAttendance: { sessionToken: string; sessionId: number };
 };
 
 export type RootStackParamList = {

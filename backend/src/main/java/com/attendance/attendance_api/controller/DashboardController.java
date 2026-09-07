@@ -6,6 +6,7 @@ import com.attendance.attendance_api.dto.StudentInfoDto;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.service.AttendanceService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/dashboard")
+@PreAuthorize("hasRole('STUDENT')")
 public class DashboardController {
 
     private final AttendanceService attendanceService;

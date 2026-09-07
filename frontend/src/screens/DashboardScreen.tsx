@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { dashboardService } from '../services/dashboard.service';
@@ -15,6 +15,7 @@ import { ErrorState } from '../components/ErrorState';
 import { getErrorMessage } from '../utils/errorUtils';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useActiveSession } from '../hooks/useActiveSession';
 
 type DashboardNavProp = NativeStackNavigationProp<MainStackParamList, 'Dashboard'>;
 
@@ -26,6 +27,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestInFlight = useRef(false);
+  const { session: activeSession, refresh: refreshActiveSession } = useActiveSession();
 
   const fetchDashboardData = useCallback(async () => {
     if (requestInFlight.current) {
@@ -70,6 +72,14 @@ export default function DashboardScreen() {
     loadData();
   }, [loadData]);
 
+  // Bug #4 fix: when returning from MarkAttendanceScreen the live-session banner
+  // should disappear immediately, not after the next 10-second poll interval.
+  useFocusEffect(
+    useCallback(() => {
+      refreshActiveSession();
+    }, [refreshActiveSession])
+  );
+
   const getCurrentDate = () => {
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     return new Date().toLocaleDateString(undefined, options);
@@ -99,6 +109,22 @@ export default function DashboardScreen() {
         <Text style={styles.dateText}>{getCurrentDate()}</Text>
       </View>
 
+      {activeSession && (
+        <TouchableOpacity
+          style={styles.liveSessionCard}
+          onPress={() =>
+            navigation.navigate('MarkAttendance', {
+              sessionToken: activeSession.currentToken,
+              sessionId: activeSession.id,
+            })
+        }
+        >
+    <Text style={styles.liveSessionText}>
+      🟢 {activeSession.subject} is live — tap to check in
+    </Text>
+  </TouchableOpacity>
+)}
+
       {data ? (
         <>
           <StudentCard student={data.student} />
@@ -117,7 +143,7 @@ export default function DashboardScreen() {
                 title="Timetable" 
                 icon="time-outline" 
                 color={colors.warning}
-                onPress={() => console.log('Timetable')} 
+                onPress={() => Alert.alert('Coming Soon', 'The Timetable feature is not available yet.')} 
               />
               <QuickActionButton 
                 title="Profile" 
@@ -195,5 +221,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingVertical: spacing.xl,
+  },
+  liveSessionCard: {
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: 8,
+    marginBottom: spacing.md,
+  },
+  liveSessionText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

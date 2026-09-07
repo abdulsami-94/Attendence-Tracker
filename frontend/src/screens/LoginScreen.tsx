@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSizes, fontWeights, styles as themeStyles } from '../theme';
@@ -186,7 +187,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => console.log('Forgot Password pressed')}
+              onPress={() => Alert.alert('Coming Soon', 'Password reset is not yet available. Please contact your administrator.')}
               activeOpacity={0.7}
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>

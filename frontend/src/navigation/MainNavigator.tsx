@@ -11,6 +11,7 @@ import TeacherDashboardScreen from '../screens/TeacherDashboardScreen';
 import StartSessionScreen from '../screens/StartSessionScreen';
 import TeacherSessionsScreen from '../screens/TeacherSessionsScreen';
 import SessionAttendanceScreen from '../screens/SessionAttendanceScreen';
+import MarkAttendanceScreen from '../screens/MarkAttendanceScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -65,6 +66,11 @@ export default function MainNavigator() {
         name="Profile"
         component={ProfileScreen}
         options={{ title: 'Profile' }}
+      />
+      <Stack.Screen
+        name="MarkAttendance"
+        component={MarkAttendanceScreen}
+        options={{ title: 'Mark Attendance' }}
       />
     </Stack.Navigator>
   );

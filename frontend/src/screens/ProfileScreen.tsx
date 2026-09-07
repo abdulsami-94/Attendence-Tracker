@@ -24,7 +24,7 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <Avatar name={user.name} size={100} />
         <Text style={styles.headerName}>{user.name}</Text>
-        <Text style={styles.headerRole}>STUDENT</Text>
+        <Text style={styles.headerRole}>{user.role}</Text>
       </View>
 
       <View style={styles.card}>

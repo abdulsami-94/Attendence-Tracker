@@ -40,9 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setLogoutHandler(signOut);
     restoreSession();
-  }, [signOut]);
+  }, [signOut, restoreSession]);
 
-  const restoreSession = async () => {
+  const restoreSession = useCallback(async () => {
     try {
       setIsInitializing(true);
       const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsInitializing(false);
     }
-  };
+  }, []);
 
   const signIn = async (credentials: LoginCredentials) => {
     try {

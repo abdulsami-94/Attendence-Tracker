@@ -10,6 +10,7 @@ import com.attendance.attendance_api.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class AttendanceService {
 
     private static final double EARTH_RADIUS_METERS = 6_371_000;
 
+    @Transactional
     public AttendanceResponse markAttendance(User student, AttendanceRequest req) {
         Session session = sessionRepository.findByCurrentToken(req.getToken())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid session token"));
@@ -38,13 +40,18 @@ public class AttendanceService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Attendance already marked for this session");
         }
 
-        double distance = distanceMeters(
-                session.getLatitude(), session.getLongitude(),
-                req.getLatitude(), req.getLongitude());
-        if (distance > session.getRadiusMeters()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Outside geofence (" + Math.round(distance) + "m from session, limit "
-                            + session.getRadiusMeters() + "m)");
+        // Validate geofence only if the session has location data
+        if (session.getLatitude() != null && session.getLongitude() != null
+                && session.getRadiusMeters() != null
+                && req.getLatitude() != null && req.getLongitude() != null) {
+            double distance = distanceMeters(
+                    session.getLatitude(), session.getLongitude(),
+                    req.getLatitude(), req.getLongitude());
+            if (distance > session.getRadiusMeters()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Outside geofence (" + Math.round(distance) + "m from session, limit "
+                                + session.getRadiusMeters() + "m)");
+            }
         }
 
         AttendanceRecord record = new AttendanceRecord();
@@ -58,12 +65,14 @@ public class AttendanceService {
         return toResponse(attendanceRepository.save(record));
     }
 
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getMyAttendance(User student) {
         return attendanceRepository.findByStudentOrderByTimestampDesc(student).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getRecordsForSession(Long sessionId, User teacher) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));

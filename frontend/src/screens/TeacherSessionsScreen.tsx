@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -27,28 +27,35 @@ export default function TeacherSessionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const requestInFlight = useRef(false);
 
   const fetchSessions = useCallback(async () => {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     try {
       setError('');
       const data = await sessionService.getMySessions();
       setSessions(data);
     } catch (err) {
       setError(getErrorMessage(err));
+    } finally {
+      requestInFlight.current = false;
     }
   }, []);
 
   const loadSessions = useCallback(async () => {
+    if (requestInFlight.current) return;
     setLoading(true);
     await fetchSessions();
     setLoading(false);
   }, [fetchSessions]);
 
   const onRefresh = useCallback(async () => {
+    if (refreshing || requestInFlight.current) return;
     setRefreshing(true);
     await fetchSessions();
     setRefreshing(false);
-  }, [fetchSessions]);
+  }, [fetchSessions, refreshing]);
 
   useEffect(() => {
     loadSessions();

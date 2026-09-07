@@ -3,9 +3,14 @@ import { get, post, put } from './api';
 export interface Session {
   id: number;
   subject: string;
+  roomNumber: string;
   active: boolean;
   startTime: string;
-  endTime?: string;
+  expiryTime: string;
+  currentToken: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
 }
 
 export interface StartSessionRequest {

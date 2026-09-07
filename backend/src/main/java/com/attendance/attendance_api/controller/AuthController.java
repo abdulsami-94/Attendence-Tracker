@@ -1,7 +1,6 @@
 package com.attendance.attendance_api.controller;
 
 import com.attendance.attendance_api.dto.RegisterRequest;
-import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.dto.LoginRequest;
 import com.attendance.attendance_api.dto.LoginResponse;
 import com.attendance.attendance_api.dto.UserResponse;
@@ -21,12 +20,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-        public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-        public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 }

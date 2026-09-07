@@ -8,6 +8,7 @@ import com.attendance.attendance_api.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ public class SessionService {
     private static final int DEFAULT_DURATION_MINUTES = 10;
     private static final int DEFAULT_RADIUS_METERS = 100;
 
+    @Transactional
     public SessionResponse startSession(User teacher, StartSessionRequest request) {
         sessionRepository.findByTeacherAndActiveTrue(teacher).ifPresent(s -> {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -46,6 +48,7 @@ public class SessionService {
         return toResponse(sessionRepository.save(session));
     }
 
+    @Transactional
     public SessionResponse endSession(User teacher, Long sessionId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
@@ -58,12 +61,21 @@ public class SessionService {
         return toResponse(sessionRepository.save(session));
     }
 
+    @Transactional(readOnly = true)
     public SessionResponse getCurrentSession(User teacher) {
         Session session = sessionRepository.findByTeacherAndActiveTrue(teacher)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No active session"));
         return toResponse(session);
     }
 
+    @Transactional(readOnly = true)
+    public SessionResponse getCurrentActiveSessionForStudent() {
+        Session session = sessionRepository.findFirstByActiveTrue()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No active session"));
+        return toResponseWithoutToken(session);
+    }
+
+    @Transactional(readOnly = true)
     public List<SessionResponse> getMySessions(User teacher) {
         return sessionRepository.findByTeacherOrderByStartTimeDesc(teacher).stream()
                 .map(this::toResponse)
@@ -76,4 +88,13 @@ public class SessionService {
                 s.getStartTime(), s.getExpiryTime(), s.getCurrentToken(), s.isActive(),
                 s.getLatitude(), s.getLongitude(), s.getRadiusMeters());
     }
+
+    /** Returns response without exposing the session token — for student-facing endpoints. */
+    private SessionResponse toResponseWithoutToken(Session s) {
+        return new SessionResponse(
+                s.getId(), s.getSubject(), s.getRoomNumber(),
+                s.getStartTime(), s.getExpiryTime(), null, s.isActive(),
+                s.getLatitude(), s.getLongitude(), s.getRadiusMeters());
+    }
 }
+
