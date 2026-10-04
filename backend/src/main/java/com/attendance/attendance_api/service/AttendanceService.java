@@ -88,13 +88,15 @@ public class AttendanceService {
 
     private AttendanceResponse toResponse(AttendanceRecord r) {
         return new AttendanceResponse(
-                r.getId(),
-                r.getSession().getId(),
-                r.getSession().getSubject(),
-                r.getTimestamp(),
-                r.getLatitude(),
-                r.getLongitude(),
-                r.getDeviceId());
+            r.getId(),
+            r.getSession().getId(),
+            r.getSession().getSubject(),
+            r.getTimestamp(),
+            r.getLatitude(),
+            r.getLongitude(),
+            r.getDeviceId(),
+            r.getStudent().getName(),
+            r.getStudent().getEmail());
     }
 
     /** Haversine distance between two WGS84 points, in meters. */

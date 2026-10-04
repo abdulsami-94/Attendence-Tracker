@@ -15,4 +15,6 @@ public class AttendanceResponse {
     private Double latitude;
     private Double longitude;
     private String deviceId;
+    private String studentName;
+    private String studentEmail;
 }
