@@ -15,6 +15,8 @@ export interface Session {
 
 export interface StartSessionRequest {
   subject: string;
+  latitude: number;
+  longitude: number;
 }
 
 export const sessionService = {

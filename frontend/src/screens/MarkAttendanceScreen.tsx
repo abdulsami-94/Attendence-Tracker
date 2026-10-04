@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
@@ -17,15 +18,22 @@ type Props = NativeStackScreenProps<MainStackParamList, 'MarkAttendance'>;
 type ScreenStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 export default function MarkAttendanceScreen({ route, navigation }: Props) {
-  const { sessionToken, sessionId } = route.params;
+  const { sessionId } = route.params;
 
   const { error: gpsError, getLocation } = useLocation();
+  const [code, setCode] = useState('');
   const [status, setStatus] = useState<ScreenStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
 
-  // ...rest of the file is unchanged from what you already have
   const handleMarkAttendance = async () => {
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      setStatus('error');
+      setErrorMessage('Enter the code your teacher gave you.');
+      return;
+    }
+
     setStatus('submitting');
     setErrorMessage(null);
     setGpsLoading(true);
@@ -42,7 +50,7 @@ export default function MarkAttendanceScreen({ route, navigation }: Props) {
     try {
       const deviceId = await getOrCreateDeviceId();
       await attendanceService.markAttendance({
-        token: sessionToken,
+        token: trimmedCode,
         sessionId,
         latitude: coords.latitude,
         longitude: coords.longitude,
@@ -89,8 +97,21 @@ export default function MarkAttendanceScreen({ route, navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Mark Attendance</Text>
       <Text style={styles.subtitle}>
-        Make sure you're inside the classroom before submitting.
+        Make sure you're inside the classroom, then enter the code your teacher shows.
       </Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Session code"
+        value={code}
+        onChangeText={(text) => {
+          setCode(text);
+          if (errorMessage) setErrorMessage(null);
+        }}
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={status !== 'submitting'}
+      />
 
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
@@ -113,6 +134,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   title: { fontSize: 22, fontWeight: '600', marginBottom: 8 },
   subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 24 },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginBottom: 16,
+  },
   button: { backgroundColor: '#2563eb', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 8, minWidth: 160, alignItems: 'center' },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },

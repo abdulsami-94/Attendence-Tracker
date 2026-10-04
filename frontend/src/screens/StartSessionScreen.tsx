@@ -11,6 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { sessionService } from '../services/session.service';
+import { useLocation } from '../hooks/useLocation';
 import { getErrorMessage } from '../utils/errorUtils';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -20,6 +21,7 @@ type StartSessionNavProp = NativeStackNavigationProp<MainStackParamList>;
 
 export default function StartSessionScreen() {
   const navigation = useNavigation<StartSessionNavProp>();
+  const { getLocation } = useLocation();
   const [subject, setSubject] = useState('');
   const [subjectError, setSubjectError] = useState('');
   const [generalError, setGeneralError] = useState('');
@@ -42,9 +44,21 @@ export default function StartSessionScreen() {
       setSubjectError('');
       setGeneralError('');
 
-      await sessionService.startSession({ subject: trimmedSubject });
+      const coords = await getLocation();
+      if (!coords) {
+        setGeneralError(
+          'Could not get your location. Turn on location services and allow permission.'
+        );
+        return;
+      }
 
-      Alert.alert('Session started', 'Your attendance session has started.', [
+      const session = await sessionService.startSession({
+        subject: trimmedSubject,
+        latitude: coords.latitude,
+        longitude: coords.longitude,  
+      });
+
+        Alert.alert('Session started', `Code: ${session.currentToken}`, [
         {
           text: 'OK',
           onPress: () => navigation.goBack(),
