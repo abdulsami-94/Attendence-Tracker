@@ -64,7 +64,7 @@ export default function SessionAttendanceScreen() {
     <FlatList
       data={records}
       keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => <AttendanceCard record={item} />}
+      renderItem={({ item }) => <AttendanceCard record={item} showStudent />}
       style={styles.container}
       contentContainerStyle={styles.listContent}
       refreshControl={

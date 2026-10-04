@@ -7,6 +7,7 @@ import { spacing } from '../theme/spacing';
 
 interface Props {
   record: AttendanceRecord;
+  showStudent?: boolean;
 }
 
 /**
@@ -33,14 +34,21 @@ const formatTime = (timestamp: string): string => {
   });
 };
 
-const AttendanceCard: React.FC<Props> = ({ record }) => {
+const AttendanceCard: React.FC<Props> = ({ record, showStudent = false }) => {
+  const hasStudent = showStudent && !!record.studentName;
+
   return (
     <View style={styles.card}>
       <View style={styles.iconContainer}>
         <Ionicons name="checkmark-circle" size={28} color={colors.success} />
       </View>
       <View style={styles.content}>
-        <Text style={styles.subject}>{record.subject}</Text>
+        <Text style={styles.subject}>
+          {hasStudent ? record.studentName : record.subject}
+        </Text>
+        {hasStudent && record.studentEmail ? (
+          <Text style={styles.email}>{record.studentEmail}</Text>
+        ) : null}
         <View style={styles.metaRow}>
           <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
           <Text style={styles.metaText}>{formatDate(record.timestamp)}</Text>
@@ -83,6 +91,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  email: {
+    fontSize: 12,
+    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   metaRow: {

@@ -6,6 +6,8 @@ export interface AttendanceRecord {
   latitude: number;
   longitude: number;
   deviceId: string | null;
+  studentName?: string;
+  studentEmail?: string;
 }
 
 // Alias kept for backward-compatibility with service return types
