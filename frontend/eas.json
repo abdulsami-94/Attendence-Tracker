@@ -1,0 +1,16 @@
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://attendence-tracker-production-c5a1.up.railway.app/api"
+      }
+    }
+  }
+}

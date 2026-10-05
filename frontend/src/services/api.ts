@@ -31,14 +31,14 @@ const apiBaseURL = process.env.EXPO_PUBLIC_API_URL;
 
 if (!apiBaseURL) {
   console.warn(
-    '[API Warning]: EXPO_PUBLIC_API_URL environment variable is not defined. ' +
-    'Falling back to default Android Emulator API URL (http://10.0.2.2:8080/api).'
+    '[API Warning]: EXPO_PUBLIC_API_URL is not defined. ' +
+    'Falling back to the hosted Railway API.'
   );
 }
 
 // Create a single Axios instance with default settings
 const apiClient: AxiosInstance = axios.create({
-  baseURL: apiBaseURL || 'http://10.0.2.2:8080/api',
+  baseURL: apiBaseURL || 'https://attendence-tracker-production-c5a1.up.railway.app/api',
   timeout: 10000, // 10000ms request timeout
   headers: {
     'Content-Type': 'application/json',
