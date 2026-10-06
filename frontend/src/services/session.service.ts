@@ -1,4 +1,4 @@
-import { get, post, put } from './api';
+import { get, post } from './api';
 
 export interface Session {
   id: number;
@@ -25,7 +25,7 @@ export const sessionService = {
   },
 
   endSession: async (id: number): Promise<Session> => {
-    return await put<Session>(`/sessions/${id}/end`);
+    return await post<Session>(`/sessions/${id}/end`);
   },
 
   getMySessions: async (): Promise<Session[]> => {

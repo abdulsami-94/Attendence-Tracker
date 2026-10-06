@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import { sessionService, Session } from '../services/session.service';
 
 const POLL_INTERVAL_MS = 10000;
@@ -8,19 +9,21 @@ export function useActiveSession() {
   const [loading, setLoading] = useState(true);
   const requestInFlight = useRef(false);
   const isMounted = useRef(true);
+  const sessionVersion = useRef(0);
 
   const poll = useCallback(async () => {
     if (requestInFlight.current) return;
     requestInFlight.current = true;
+    const requestVersion = sessionVersion.current;
 
     try {
       const data = await sessionService.getCurrentSession();
-      if (isMounted.current) setSession(data);
-    } catch (err: any) {
+      if (isMounted.current && requestVersion === sessionVersion.current) setSession(data);
+    } catch (err: unknown) {
       // 404 means "no session live right now" — that's a normal, expected
       // state for a polling hook, not a failure. Don't treat it as an error.
-      if (err.response?.status === 404) {
-        if (isMounted.current) setSession(null);
+      if (isAxiosError(err) && err.response?.status === 404) {
+        if (isMounted.current && requestVersion === sessionVersion.current) setSession(null);
       } else {
         console.error('Session poll error:', err);
       }
@@ -48,5 +51,10 @@ export function useActiveSession() {
     poll();
   }, [poll]);
 
-  return { session, loading, refresh };
+  const clearSession = useCallback(() => {
+    sessionVersion.current += 1;
+    setSession(null);
+  }, []);
+
+  return { session, loading, refresh, clearSession };
 }

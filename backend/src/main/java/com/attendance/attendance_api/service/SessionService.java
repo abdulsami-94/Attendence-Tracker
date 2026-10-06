@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +22,7 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private static final int DEFAULT_DURATION_MINUTES = 10;
     private static final int DEFAULT_RADIUS_METERS = 100;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Transactional
     public SessionResponse startSession(User teacher, StartSessionRequest request) {
@@ -38,7 +39,7 @@ public class SessionService {
         session.setRoomNumber(request.getRoomNumber());
         session.setStartTime(LocalDateTime.now());
         session.setExpiryTime(LocalDateTime.now().plusMinutes(duration));
-        session.setCurrentToken(UUID.randomUUID().toString());
+        session.setCurrentToken(generateUniqueCode());
         session.setActive(true);
         session.setLatitude(request.getLatitude());
         session.setLongitude(request.getLongitude());
@@ -82,6 +83,20 @@ public class SessionService {
                 .toList();
     }
 
+    /** Generates a zero-padded 6-digit code that isn't used by any currently active session. */
+    private String generateUniqueCode() {
+        for (int i = 0; i < 10; i++) {
+            String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+            if (sessionRepository.findFirstByActiveTrue()
+                    .map(session -> code.equals(session.getCurrentToken()))
+                    .orElse(false) == false) {
+                return code;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Could not generate a unique session code");
+    }
+
     private SessionResponse toResponse(Session s) {
         return new SessionResponse(
                 s.getId(), s.getSubject(), s.getRoomNumber(),
@@ -97,4 +112,3 @@ public class SessionService {
                 s.getLatitude(), s.getLongitude(), s.getRadiusMeters());
     }
 }
-

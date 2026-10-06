@@ -37,11 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  useEffect(() => {
-    setLogoutHandler(signOut);
-    restoreSession();
-  }, [signOut, restoreSession]);
-
   const restoreSession = useCallback(async () => {
     try {
       setIsInitializing(true);
@@ -75,6 +70,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsInitializing(false);
     }
   }, []);
+
+  useEffect(() => {
+    setLogoutHandler(signOut);
+    restoreSession();
+  }, [signOut, restoreSession]);
 
   const signIn = async (credentials: LoginCredentials) => {
     try {

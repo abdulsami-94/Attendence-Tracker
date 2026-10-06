@@ -6,14 +6,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
 import { MainStackParamList } from '../types/navigation';
 import { QuickActionButton } from '../components/QuickActionButton';
+import { EndSessionButton } from '../components/EndSessionButton';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useActiveSession } from '../hooks/useActiveSession';
 
 type TeacherDashboardNavProp = NativeStackNavigationProp<MainStackParamList>;
 
 export default function TeacherDashboardScreen() {
   const navigation = useNavigation<TeacherDashboardNavProp>();
   const { user, signOut, loading } = useAuth();
+  const { session: activeSession, clearSession } = useActiveSession();
 
   return (
     <View style={styles.container}>
@@ -27,6 +30,13 @@ export default function TeacherDashboardScreen() {
           Welcome back, {user?.name || 'Teacher'}
         </Text>
       </View>
+
+      {activeSession && (
+        <View style={styles.activeSessionContainer}>
+          <Text style={styles.activeSessionText}>{activeSession.subject} is currently live</Text>
+          <EndSessionButton sessionId={activeSession.id} onEnded={clearSession} />
+        </View>
+      )}
 
       <View style={styles.actionsContainer}>
         <QuickActionButton
@@ -100,5 +110,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     marginTop: spacing.lg,
+  },
+  activeSessionContainer: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  activeSessionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
   },
 });
