@@ -26,19 +26,16 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosR
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
 
-// Load baseURL from environment variable, with a safe fallback to Android emulator interface if not set
-const apiBaseURL = process.env.EXPO_PUBLIC_API_URL;
+// Fail fast instead of accidentally sending local app traffic to production.
+const apiBaseURL = process.env.EXPO_PUBLIC_API_URL?.trim();
 
 if (!apiBaseURL) {
-  console.warn(
-    '[API Warning]: EXPO_PUBLIC_API_URL is not defined. ' +
-    'Falling back to the hosted Railway API.'
-  );
+  throw new Error('EXPO_PUBLIC_API_URL must be set for the current app environment.');
 }
 
 // Create a single Axios instance with default settings
 const apiClient: AxiosInstance = axios.create({
-  baseURL: apiBaseURL || 'https://attendence-tracker-production-c5a1.up.railway.app/api',
+  baseURL: apiBaseURL,
   timeout: 10000, // 10000ms request timeout
   headers: {
     'Content-Type': 'application/json',
