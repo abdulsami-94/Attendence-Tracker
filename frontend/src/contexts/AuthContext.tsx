@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsInitializing(true);
       const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+      const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
       
       if (!storedToken) {
         setIsInitializing(false);
@@ -56,13 +57,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(storedToken);
         setUser(userData);
         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
-      } catch (error) {
-        // Validation failed (e.g. 401), clean up
-        console.error('Token validation failed:', error);
-        await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
-        await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-        setToken(null);
-        setUser(null);
+      } catch (error: any) {
+        const status = error?.response?.status;
+        if (status === 401 || status === 403) {
+          // Token rejected (401/403): clean up and force logout
+          console.error('Token validation failed (token rejected):', error);
+          await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
+          await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+          setToken(null);
+          setUser(null);
+        } else {
+          // Network error, timeout, 5xx: preserve stored token & state, do not force logout
+          console.warn('Could not reach server during session restore, preserving token and cached state:', error);
+          setToken(storedToken);
+          if (storedUser) {
+            try {
+              setUser(JSON.parse(storedUser));
+            } catch (e) {
+              console.error('Failed to parse cached user:', e);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to restore session:', error);

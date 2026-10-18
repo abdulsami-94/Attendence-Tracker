@@ -1,8 +1,8 @@
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  role: 'STUDENT' | 'TEACHER'
+  role: 'STUDENT' | 'TEACHER';
 }
 
 export interface AuthResponse {

@@ -5,8 +5,11 @@ import com.attendance.attendance_api.dto.LoginRequest;
 import com.attendance.attendance_api.dto.LoginResponse;
 import com.attendance.attendance_api.dto.UserResponse;
 import com.attendance.attendance_api.service.AuthService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import jakarta.validation.Valid;
 
 @RestController
@@ -27,5 +30,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMe(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return ResponseEntity.ok(authService.getMe(authentication.getName()));
     }
 }
