@@ -8,9 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { attendanceService } from '../services/attendanceService';
-import { dashboardService } from '../services/dashboard.service';
-import { AttendanceRecord } from '../types/attendance';
-import { AttendanceSummary } from '../types/dashboard';
+import { AttendanceRecord, AttendanceSummaryResponse } from '../types/attendance';
 import AttendanceCard from '../components/AttendanceCard';
 import { SummaryCard } from '../components/SummaryCard';
 import { LoadingState } from '../components/LoadingState';
@@ -22,7 +20,7 @@ import { spacing } from '../theme/spacing';
 
 export default function AttendanceScreen() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [summary, setSummary] = useState<AttendanceSummary | null>(null);
+  const [summary, setSummary] = useState<AttendanceSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +35,12 @@ export default function AttendanceScreen() {
 
     try {
       setError(null);
-      const [attendanceRecords, dashboardData] = await Promise.all([
+      const [attendanceRecords, summaryData] = await Promise.all([
         attendanceService.getMyAttendance(),
-        dashboardService.getDashboardData(),
+        attendanceService.getAttendanceSummary(),
       ]);
       setRecords(attendanceRecords);
-      setSummary(dashboardData.attendanceSummary);
+      setSummary(summaryData);
     } catch (err) {
       console.error('Attendance fetch error:', err);
       setError(getErrorMessage(err));

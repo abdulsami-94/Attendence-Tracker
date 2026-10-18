@@ -2,6 +2,7 @@ package com.attendance.attendance_api.service;
 
 import com.attendance.attendance_api.dto.AttendanceRequest;
 import com.attendance.attendance_api.dto.AttendanceResponse;
+import com.attendance.attendance_api.dto.AttendanceSummaryResponse;
 import com.attendance.attendance_api.model.AttendanceRecord;
 import com.attendance.attendance_api.model.Session;
 import com.attendance.attendance_api.model.User;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -70,6 +73,22 @@ public class AttendanceService {
         return attendanceRepository.findByStudentOrderByTimestampDesc(student).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AttendanceSummaryResponse getAttendanceSummary(User student) {
+        LocalDateTime now = LocalDateTime.now();
+        long totalSessions = sessionRepository.countCompletedSessions(now);
+        long attendedSessions = attendanceRepository.countAttendedPastSessions(student.getId(), now);
+
+        double percentage = 0.0;
+        if (totalSessions > 0) {
+            percentage = BigDecimal.valueOf((double) attendedSessions / totalSessions * 100.0)
+                    .setScale(1, RoundingMode.HALF_UP)
+                    .doubleValue();
+        }
+
+        return new AttendanceSummaryResponse(totalSessions, attendedSessions, percentage);
     }
 
     @Transactional(readOnly = true)

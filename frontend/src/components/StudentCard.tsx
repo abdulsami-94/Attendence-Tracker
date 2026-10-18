@@ -1,42 +1,34 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { StudentInfo } from '../types/dashboard';
+import { View, Text, StyleSheet } from 'react-native';
+import { User } from '../types/auth';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
-  student: StudentInfo;
+  student: User | null;
 }
 
 export const StudentCard: React.FC<Props> = ({ student }) => {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        {student.profileImageUrl ? (
-          <Image source={{ uri: student.profileImageUrl }} style={styles.image} />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Ionicons name="person" size={32} color={colors.textSecondary} />
-          </View>
-        )}
+        <View style={styles.placeholderImage}>
+          <Ionicons name="person" size={32} color={colors.textSecondary} />
+        </View>
         <View style={styles.info}>
-          <Text style={styles.name}>{student.fullName}</Text>
-          <Text style={styles.rollNumber}>Roll No: {student.rollNumber}</Text>
+          <Text style={styles.name}>{student?.name || 'Student'}</Text>
+          <Text style={styles.roleText}>{student?.role || 'STUDENT'}</Text>
         </View>
       </View>
       <View style={styles.details}>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Department:</Text>
-          <Text style={styles.detailValue}>{student.department}</Text>
+          <Text style={styles.detailLabel}>Email:</Text>
+          <Text style={styles.detailValue}>{student?.email || '—'}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Semester:</Text>
-          <Text style={styles.detailValue}>{student.semester}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Division:</Text>
-          <Text style={styles.detailValue}>{student.division}</Text>
+          <Text style={styles.detailLabel}>Student ID:</Text>
+          <Text style={styles.detailValue}>{student?.id ?? '—'}</Text>
         </View>
       </View>
     </View>
@@ -63,12 +55,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     marginBottom: spacing.md,
   },
-  image: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: spacing.md,
-  },
   placeholderImage: {
     width: 60,
     height: 60,
@@ -87,7 +73,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
-  rollNumber: {
+  roleText: {
     fontSize: 14,
     color: colors.textSecondary,
   },

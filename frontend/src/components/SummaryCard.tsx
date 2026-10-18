@@ -1,22 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { AttendanceSummary } from '../types/dashboard';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { AttendanceSummaryResponse } from '../types/attendance';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
-  summary: AttendanceSummary;
+  summary: AttendanceSummaryResponse | null;
+  loading?: boolean;
+  error?: boolean;
 }
 
-export const SummaryCard: React.FC<Props> = ({ summary }) => {
+export const SummaryCard: React.FC<Props> = ({ summary, loading = false, error = false }) => {
   const getPercentageColor = (percentage: number) => {
     if (percentage > 75) return colors.success;
     if (percentage >= 60) return colors.warning;
     return colors.error;
   };
 
-  const percentageColor = getPercentageColor(summary.overallPercentage);
+  const hasData = summary !== null && !error && !loading;
+  const percentageColor = hasData ? getPercentageColor(summary.percentage) : colors.border;
 
   return (
     <View style={styles.card}>
@@ -24,26 +27,38 @@ export const SummaryCard: React.FC<Props> = ({ summary }) => {
       
       <View style={styles.percentageContainer}>
         <View style={[styles.percentageCircle, { borderColor: percentageColor }]}>
-          <Text style={[styles.percentageText, { color: percentageColor }]}>
-            {summary.overallPercentage.toFixed(1)}%
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : error || !summary ? (
+            <Text style={[styles.percentageText, { color: colors.textSecondary }]}>—</Text>
+          ) : (
+            <Text style={[styles.percentageText, { color: percentageColor }]}>
+              {summary.percentage}%
+            </Text>
+          )}
         </View>
       </View>
 
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
-          <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-          <Text style={styles.statValue}>{summary.presentLectures}</Text>
+          <Ionicons name="checkmark-circle" size={24} color={hasData ? colors.success : colors.textSecondary} />
+          <Text style={styles.statValue}>
+            {loading ? '...' : error || !summary ? '—' : summary.attendedSessions}
+          </Text>
           <Text style={styles.statLabel}>Present</Text>
         </View>
         <View style={styles.statBox}>
-          <Ionicons name="close-circle" size={24} color={colors.error} />
-          <Text style={styles.statValue}>{summary.absentLectures}</Text>
+          <Ionicons name="close-circle" size={24} color={hasData ? colors.error : colors.textSecondary} />
+          <Text style={styles.statValue}>
+            {loading ? '...' : error || !summary ? '—' : Math.max(0, summary.totalSessions - summary.attendedSessions)}
+          </Text>
           <Text style={styles.statLabel}>Absent</Text>
         </View>
         <View style={styles.statBox}>
-          <Ionicons name="book" size={24} color={colors.primary} />
-          <Text style={styles.statValue}>{summary.totalLectures}</Text>
+          <Ionicons name="book" size={24} color={hasData ? colors.primary : colors.textSecondary} />
+          <Text style={styles.statValue}>
+            {loading ? '...' : error || !summary ? '—' : summary.totalSessions}
+          </Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
       </View>

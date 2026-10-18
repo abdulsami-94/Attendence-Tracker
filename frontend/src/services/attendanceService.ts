@@ -1,7 +1,11 @@
 import { get, post } from './api';
-import { AttendanceResponse } from '../types/attendance';
+import { AttendanceResponse, AttendanceSummaryResponse } from '../types/attendance';
 
 export const attendanceService = {
+
+  getAttendanceSummary: async (): Promise<AttendanceSummaryResponse> => {
+    return await get<AttendanceSummaryResponse>('/attendance/summary');
+  },
 
   getMyAttendance: async (): Promise<AttendanceResponse[]> => {
     return await get<AttendanceResponse[]>('/attendance/mine');

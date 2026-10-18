@@ -12,3 +12,9 @@ export interface AttendanceRecord {
 
 // Alias kept for backward-compatibility with service return types
 export type AttendanceResponse = AttendanceRecord;
+
+export interface AttendanceSummaryResponse {
+  totalSessions: number;
+  attendedSessions: number;
+  percentage: number;
+}

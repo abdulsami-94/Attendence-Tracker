@@ -2,6 +2,7 @@ package com.attendance.attendance_api.controller;
 
 import com.attendance.attendance_api.dto.AttendanceRequest;
 import com.attendance.attendance_api.dto.AttendanceResponse;
+import com.attendance.attendance_api.dto.AttendanceSummaryResponse;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.repository.UserRepository;
 import com.attendance.attendance_api.service.AttendanceService;
@@ -33,6 +34,12 @@ public class AttendanceController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<AttendanceResponse>> mine(Authentication authentication) {
         return ResponseEntity.ok(attendanceService.getMyAttendance(currentUser(authentication)));
+    }
+
+    @GetMapping("/summary")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<AttendanceSummaryResponse> summary(Authentication authentication) {
+        return ResponseEntity.ok(attendanceService.getAttendanceSummary(currentUser(authentication)));
     }
 
     @GetMapping("/records")
