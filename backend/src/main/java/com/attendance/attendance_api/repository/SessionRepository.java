@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SessionRepository extends JpaRepository<Session, Long> {
-    Optional<Session> findFirstByActiveTrue();
-    Optional<Session> findByTeacherAndActiveTrue(User teacher);
     Optional<Session> findByCurrentToken(String currentToken);
     Optional<Session> findFirstByActiveTrueAndExpiryTimeAfter(LocalDateTime now);
     Optional<Session> findByTeacherAndActiveTrueAndExpiryTimeAfter(User teacher, LocalDateTime now);

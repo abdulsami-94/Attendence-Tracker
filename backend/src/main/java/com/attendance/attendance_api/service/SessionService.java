@@ -48,7 +48,7 @@ public class SessionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subject does not support LAB session type");
         }
 
-        sessionRepository.findByTeacherAndActiveTrue(teacher).ifPresent(s -> {
+        sessionRepository.findByTeacherAndActiveTrueAndExpiryTimeAfter(teacher, LocalDateTime.now()).ifPresent(s -> {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "You already have an active session (id=" + s.getId() + "). End it first.");
         });
@@ -110,7 +110,7 @@ public class SessionService {
     private String generateUniqueCode() {
         for (int i = 0; i < 10; i++) {
             String code = String.format("%06d", RANDOM.nextInt(1_000_000));
-            if (sessionRepository.findFirstByActiveTrue()
+            if (sessionRepository.findFirstByActiveTrueAndExpiryTimeAfter(LocalDateTime.now())
                     .map(session -> code.equals(session.getCurrentToken()))
                     .orElse(false) == false) {
                 return code;
