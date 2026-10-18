@@ -127,16 +127,20 @@ export default function DashboardScreen() {
           <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.md }} />
         ) : error || !summary ? (
           <Text style={styles.breakdownPlaceholder}>—</Text>
-        ) : (
-          summary.subjects?.map((item) => (
+        ) : (() => {
+          const filtered = (summary.subjects ?? []).filter((item) => item.totalSessions > 0);
+          if (filtered.length === 0) {
+            return <Text style={styles.breakdownPlaceholder}>No sessions yet</Text>;
+          }
+          return filtered.map((item) => (
             <View key={item.name} style={styles.subjectRow}>
               <Text style={styles.subjectRowText}>
                 {item.name}: total {item.totalSessions}, present {item.attendedSessions}
               </Text>
               <Text style={styles.subjectPercentageText}>{item.percentage}%</Text>
             </View>
-          ))
-        )}
+          ));
+        })()}
       </View>
 
       <View style={styles.actionsContainer}>
