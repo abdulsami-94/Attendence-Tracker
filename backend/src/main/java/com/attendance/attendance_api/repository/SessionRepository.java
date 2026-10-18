@@ -16,6 +16,8 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findFirstByActiveTrue();
     Optional<Session> findByTeacherAndActiveTrue(User teacher);
     Optional<Session> findByCurrentToken(String currentToken);
+    Optional<Session> findFirstByActiveTrueAndExpiryTimeAfter(LocalDateTime now);
+    Optional<Session> findByTeacherAndActiveTrueAndExpiryTimeAfter(User teacher, LocalDateTime now);
     List<Session> findByTeacherOrderByStartTimeDesc(User teacher);
 
     @Query("SELECT COUNT(s) FROM Session s WHERE s.active = false OR s.expiryTime < :now")

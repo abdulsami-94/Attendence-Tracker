@@ -87,14 +87,14 @@ public class SessionService {
 
     @Transactional(readOnly = true)
     public SessionResponse getCurrentSession(User teacher) {
-        Session session = sessionRepository.findByTeacherAndActiveTrue(teacher)
+        Session session = sessionRepository.findByTeacherAndActiveTrueAndExpiryTimeAfter(teacher, LocalDateTime.now())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No active session"));
         return toResponse(session);
     }
 
     @Transactional(readOnly = true)
     public SessionResponse getCurrentActiveSessionForStudent() {
-        Session session = sessionRepository.findFirstByActiveTrue()
+        Session session = sessionRepository.findFirstByActiveTrueAndExpiryTimeAfter(LocalDateTime.now())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No active session"));
         return toResponseWithoutToken(session);
     }
