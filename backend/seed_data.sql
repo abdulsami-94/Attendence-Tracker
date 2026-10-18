@@ -22,18 +22,18 @@ INSERT INTO users (email, password, role, name) VALUES
 
 
 INSERT INTO session (active, current_token, expiry_time, room_number, start_time, subject, teacher_id, latitude, longitude, radius_meters) VALUES
-(false, 'SEED-TOK-001', NOW() - INTERVAL '4 days' + INTERVAL '1 hour', 'B204', NOW() - INTERVAL '4 days', 'Data Structures',
+(false, 'SEED-TOK-001', NOW() - INTERVAL '4 days' + INTERVAL '1 hour', 'B204', NOW() - INTERVAL '4 days', 'Software Engineering and Testing',
   (SELECT id FROM users WHERE email = 'teacher1@seed.test'), 18.5204, 73.8567, 50),
-(false, 'SEED-TOK-002', NOW() - INTERVAL '2 days' + INTERVAL '1 hour', 'B204', NOW() - INTERVAL '2 days', 'Software Engineering',
+(false, 'SEED-TOK-002', NOW() - INTERVAL '2 days' + INTERVAL '1 hour', 'B204', NOW() - INTERVAL '2 days', 'Core Java (Lab)',
   (SELECT id FROM users WHERE email = 'teacher1@seed.test'), 18.5204, 73.8567, 50),
-(false, 'SEED-TOK-003', NOW() - INTERVAL '1 days' + INTERVAL '1 hour', 'A101', NOW() - INTERVAL '1 days', 'Computer Networks',
+(false, 'SEED-TOK-003', NOW() - INTERVAL '1 days' + INTERVAL '1 hour', 'A101', NOW() - INTERVAL '1 days', 'Fundamentals of Artificial Intelligence (Theory/Lab)',
   (SELECT id FROM users WHERE email = 'teacher2@seed.test'), 18.5204, 73.8567, 50);
 
 
 INSERT INTO attendance_record (device_id, latitude, longitude, timestamp, session_id, student_id)
 SELECT 'SEED-DEVICE-' || u.email, 18.5204, 73.8567, s.start_time + INTERVAL '5 minutes', s.id, u.id
 FROM session s, users u
-WHERE s.subject = 'Data Structures'
+WHERE s.subject = 'Software Engineering and Testing'
   AND u.role = 'STUDENT' AND u.email LIKE '%@seed.test'
   AND u.email != 'student4@seed.test';
 
@@ -41,7 +41,7 @@ WHERE s.subject = 'Data Structures'
 INSERT INTO attendance_record (device_id, latitude, longitude, timestamp, session_id, student_id)
 SELECT 'SEED-DEVICE-' || u.email, 18.5204, 73.8567, s.start_time + INTERVAL '5 minutes', s.id, u.id
 FROM session s, users u
-WHERE s.subject = 'Software Engineering'
+WHERE s.subject = 'Core Java (Lab)'
   AND u.role = 'STUDENT' AND u.email LIKE '%@seed.test'
   AND u.email NOT IN ('student1@seed.test', 'student2@seed.test');
 
@@ -49,9 +49,8 @@ WHERE s.subject = 'Software Engineering'
 INSERT INTO attendance_record (device_id, latitude, longitude, timestamp, session_id, student_id)
 SELECT 'SEED-DEVICE-' || u.email, 18.5204, 73.8567, s.start_time + INTERVAL '5 minutes', s.id, u.id
 FROM session s, users u
-WHERE s.subject = 'Computer Networks'
+WHERE s.subject = 'Fundamentals of Artificial Intelligence (Theory/Lab)'
   AND u.role = 'STUDENT' AND u.email LIKE '%@seed.test'
   AND u.email NOT IN ('student3@seed.test', 'student5@seed.test');
 
 COMMIT;
-
