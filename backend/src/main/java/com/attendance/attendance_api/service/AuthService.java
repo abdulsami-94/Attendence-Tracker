@@ -59,7 +59,7 @@ public class AuthService {
 
     public UserResponse getMe(String email) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
         return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 }
