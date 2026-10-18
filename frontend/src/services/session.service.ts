@@ -1,5 +1,12 @@
 import { get, post } from './api';
 
+export interface SubjectOption {
+  id: number;
+  name: string;
+  hasTheory: boolean;
+  hasLab: boolean;
+}
+
 export interface Session {
   id: number;
   subject: string;
@@ -11,12 +18,18 @@ export interface Session {
   latitude: number;
   longitude: number;
   radiusMeters: number;
+  sessionType?: 'THEORY' | 'LAB';
+  subjectId?: number;
 }
 
 export interface StartSessionRequest {
-  subject: string;
+  subjectId: number;
+  sessionType: 'THEORY' | 'LAB';
   latitude: number;
   longitude: number;
+  roomNumber?: string;
+  durationMinutes?: number;
+  radiusMeters?: number;
 }
 
 export const sessionService = {
@@ -34,5 +47,9 @@ export const sessionService = {
 
   getCurrentSession: async (): Promise<Session> => {
     return await get<Session>('/sessions/current');
+  },
+
+  getSubjects: async (): Promise<SubjectOption[]> => {
+    return await get<SubjectOption[]>('/subjects');
   },
 };

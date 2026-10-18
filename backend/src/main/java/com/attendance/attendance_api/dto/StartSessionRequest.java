@@ -1,13 +1,16 @@
 package com.attendance.attendance_api.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.attendance.attendance_api.model.SessionType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class StartSessionRequest {
-    @NotBlank(message = "Subject is required")
-    private String subject;
+    @NotNull(message = "Subject ID is required")
+    private Long subjectId;
+
+    @NotNull(message = "Session type is required")
+    private SessionType sessionType;
 
     private String roomNumber;
 

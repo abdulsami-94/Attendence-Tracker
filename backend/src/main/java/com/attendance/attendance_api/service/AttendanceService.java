@@ -1,13 +1,14 @@
 package com.attendance.attendance_api.service;
 
-import com.attendance.attendance_api.dto.AttendanceRequest;
-import com.attendance.attendance_api.dto.AttendanceResponse;
-import com.attendance.attendance_api.dto.AttendanceSummaryResponse;
+import com.attendance.attendance_api.config.TeacherSeeder;
+import com.attendance.attendance_api.dto.*;
 import com.attendance.attendance_api.model.AttendanceRecord;
 import com.attendance.attendance_api.model.Session;
+import com.attendance.attendance_api.model.Subject;
 import com.attendance.attendance_api.model.User;
 import com.attendance.attendance_api.repository.AttendanceRecordRepository;
 import com.attendance.attendance_api.repository.SessionRepository;
+import com.attendance.attendance_api.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class AttendanceService {
 
     private final AttendanceRecordRepository attendanceRepository;
     private final SessionRepository sessionRepository;
+    private final SubjectRepository subjectRepository;
 
     private static final double EARTH_RADIUS_METERS = 6_371_000;
 
@@ -81,14 +84,84 @@ public class AttendanceService {
         long totalSessions = sessionRepository.countCompletedSessions(now);
         long attendedSessions = attendanceRepository.countAttendedPastSessions(student.getId(), now);
 
-        double percentage = 0.0;
-        if (totalSessions > 0) {
-            percentage = BigDecimal.valueOf((double) attendedSessions / totalSessions * 100.0)
-                    .setScale(1, RoundingMode.HALF_UP)
-                    .doubleValue();
+        double percentage = calcPercentage(attendedSessions, totalSessions);
+
+        // Aggregate counts for new sessions
+        List<SessionSubjectCount> totalNewCounts = sessionRepository.countCompletedNewSessionsGrouped(now);
+        List<SessionSubjectCount> attendedNewCounts = attendanceRepository.countAttendedNewSessionsGrouped(student.getId(), now);
+
+        Map<String, Long> totalNewMap = new HashMap<>();
+        for (SessionSubjectCount sc : totalNewCounts) {
+            totalNewMap.put(sc.getSubjectId() + "_" + sc.getSessionType().name(), sc.getCount());
         }
 
-        return new AttendanceSummaryResponse(totalSessions, attendedSessions, percentage);
+        Map<String, Long> attendedNewMap = new HashMap<>();
+        for (SessionSubjectCount sc : attendedNewCounts) {
+            attendedNewMap.put(sc.getSubjectId() + "_" + sc.getSessionType().name(), sc.getCount());
+        }
+
+        Map<String, Subject> subjectsByName = subjectRepository.findAllByOrderByNameAsc().stream()
+                .collect(Collectors.toMap(Subject::getName, s -> s, (s1, s2) -> s1));
+
+        List<SubjectAttendanceSummaryDto> subjectRows = new ArrayList<>();
+
+        // Generate the 9 valid (subject, type) combinations sorted by subject name, Theory before Lab
+        List<TeacherSeeder.SubjectDefinition> sortedDefs = TeacherSeeder.SUBJECT_DEFINITIONS.stream()
+                .sorted(Comparator.comparing(TeacherSeeder.SubjectDefinition::name))
+                .toList();
+
+        for (TeacherSeeder.SubjectDefinition def : sortedDefs) {
+            Subject entity = subjectsByName.get(def.name());
+            Long subjectId = entity != null ? entity.getId() : null;
+
+            if (def.hasTheory()) {
+                String rowName = def.name() + " (Theory)";
+                long rowTotal = 0;
+                long rowAttended = 0;
+                if (subjectId != null) {
+                    rowTotal = totalNewMap.getOrDefault(subjectId + "_THEORY", 0L);
+                    rowAttended = attendedNewMap.getOrDefault(subjectId + "_THEORY", 0L);
+                }
+                double rowPct = calcPercentage(rowAttended, rowTotal);
+                subjectRows.add(new SubjectAttendanceSummaryDto(rowName, rowTotal, rowAttended, rowPct));
+            }
+
+            if (def.hasLab()) {
+                String rowName = def.name() + " (Lab)";
+                long rowTotal = 0;
+                long rowAttended = 0;
+                if (subjectId != null) {
+                    rowTotal = totalNewMap.getOrDefault(subjectId + "_LAB", 0L);
+                    rowAttended = attendedNewMap.getOrDefault(subjectId + "_LAB", 0L);
+                }
+                double rowPct = calcPercentage(rowAttended, rowTotal);
+                subjectRows.add(new SubjectAttendanceSummaryDto(rowName, rowTotal, rowAttended, rowPct));
+            }
+        }
+
+        // Aggregate counts for legacy sessions
+        List<LegacySessionCount> totalLegacyCounts = sessionRepository.countCompletedLegacySessionsGrouped(now);
+        List<LegacySessionCount> attendedLegacyCounts = attendanceRepository.countAttendedLegacySessionsGrouped(student.getId(), now);
+
+        Map<String, Long> attendedLegacyMap = new HashMap<>();
+        for (LegacySessionCount lc : attendedLegacyCounts) {
+            attendedLegacyMap.put(lc.getSubjectName().toLowerCase().trim(), lc.getCount());
+        }
+
+        List<SubjectAttendanceSummaryDto> legacyRows = new ArrayList<>();
+        for (LegacySessionCount lc : totalLegacyCounts) {
+            String rawName = lc.getSubjectName().trim();
+            String lowerKey = rawName.toLowerCase();
+            long rowTotal = lc.getCount();
+            long rowAttended = attendedLegacyMap.getOrDefault(lowerKey, 0L);
+            double rowPct = calcPercentage(rowAttended, rowTotal);
+            legacyRows.add(new SubjectAttendanceSummaryDto(rawName, rowTotal, rowAttended, rowPct));
+        }
+
+        legacyRows.sort(Comparator.comparing(SubjectAttendanceSummaryDto::getName, String.CASE_INSENSITIVE_ORDER));
+        subjectRows.addAll(legacyRows);
+
+        return new AttendanceSummaryResponse(totalSessions, attendedSessions, percentage, subjectRows);
     }
 
     @Transactional(readOnly = true)
@@ -105,11 +178,20 @@ public class AttendanceService {
                 .toList();
     }
 
+    private double calcPercentage(long attended, long total) {
+        if (total <= 0) {
+            return 0.0;
+        }
+        return BigDecimal.valueOf((double) attended / total * 100.0)
+                .setScale(1, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
     private AttendanceResponse toResponse(AttendanceRecord r) {
         return new AttendanceResponse(
             r.getId(),
             r.getSession().getId(),
-            r.getSession().getSubject(),
+            r.getSession().getDisplayName(),
             r.getTimestamp(),
             r.getLatitude(),
             r.getLongitude(),

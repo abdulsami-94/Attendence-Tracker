@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
@@ -120,6 +120,25 @@ export default function DashboardScreen() {
       
       <SummaryCard summary={summary} loading={loading} error={!!error} />
 
+      {/* Subject Breakdown Card */}
+      <View style={styles.breakdownCard}>
+        <Text style={styles.breakdownTitle}>Subject Breakdown</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: spacing.md }} />
+        ) : error || !summary ? (
+          <Text style={styles.breakdownPlaceholder}>—</Text>
+        ) : (
+          summary.subjects?.map((item) => (
+            <View key={item.name} style={styles.subjectRow}>
+              <Text style={styles.subjectRowText}>
+                {item.name}: total {item.totalSessions}, present {item.attendedSessions}
+              </Text>
+              <Text style={styles.subjectPercentageText}>{item.percentage}%</Text>
+            </View>
+          ))
+        )}
+      </View>
+
       <View style={styles.actionsContainer}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionRow}>
@@ -210,5 +229,49 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     textAlign: 'center',
+  },
+  breakdownCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  breakdownTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  breakdownPlaceholder: {
+    fontSize: 18,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: spacing.sm,
+  },
+  subjectRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: `${colors.border}40`,
+  },
+  subjectRowText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  subjectPercentageText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
   },
 });
