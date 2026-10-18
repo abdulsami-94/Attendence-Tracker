@@ -29,7 +29,7 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.startSession(getCurrentTeacher(authentication), request));
     }
 
-    @PutMapping("/{id}/end")
+    @PostMapping("/{id}/end")
     public ResponseEntity<SessionResponse> end(@PathVariable Long id, Authentication authentication) {
         return ResponseEntity.ok(sessionService.endSession(getCurrentTeacher(authentication), id));
     }
